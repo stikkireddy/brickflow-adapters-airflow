@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "brickflow-adapters-airflow"
+name = "brickflow_airflow_110"
 version = "0.1.0"
 description = ""
 authors = ["stikkireddy <sri.tikkireddy@databricks.com>"]
@@ -7,13 +7,13 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-brickflow = { git = "https://github.com/stikkireddy/brickflow" }
 apache-airflow = "==1.10.15"
 markupsafe = "==2.0.1"
 
 
 [build-system]
 requires = ["poetry-core", "poetry-dynamic-versioning"]
+brickflow = { git = "https://github.com/stikkireddy/brickflow" }
 build-backend = "poetry_dynamic_versioning.backend"
 #build-backend = "poetry.core.masonry.api"
 

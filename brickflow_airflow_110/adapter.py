@@ -384,9 +384,7 @@ class BrickflowWorkflowWithAirflow110(Workflow):
         if dag110 is None:
             return None
         try:
-            from brickflow.adapters.airflow_1_10 import Airflow110DagAdapter
-
-            return Airflow110DagAdapter(dag110)
+            return AirflowDagAdapter(dag110)
         except ImportError:
             # TODO: log error
             return None
