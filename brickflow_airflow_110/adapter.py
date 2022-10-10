@@ -37,6 +37,7 @@ from brickflow.engine.task import (
 from brickflow.engine.workflow import Workflow, WorkflowPermissions
 
 from brickflow_airflow_110 import resolve_py4j_logging
+from brickflow_airflow_110.cronhelper import CronHelper
 
 LOGGER = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ def _bash_empty_on_kill(self):  # pylint:disable=unused-argument
 
 
 def _skip_all_except(
-    self, ti: "FakeTaskInstance", branch_task_ids
+        self, ti: "FakeTaskInstance", branch_task_ids
 ):  # pylint:disable=unused-argument
     ti.xcom_push(BRANCH_SKIP_EXCEPT, branch_task_ids)
 
@@ -118,10 +119,10 @@ class XComsPullMultipleTaskIdsError(Exception):
 
 class FakeTaskInstance(object):
     def __init__(
-        self,
-        task_id,
-        task,
-        execution_date,
+            self,
+            task_id,
+            task,
+            execution_date,
     ):
         self._execution_date = execution_date
         self._task = task
@@ -248,7 +249,7 @@ class AirflowDagAdapter:
 
     def is_branch_operator(self, task_id):
         if task_id in self._task_dict and isinstance(
-            self._task_dict[task_id], BranchPythonOperator
+                self._task_dict[task_id], BranchPythonOperator
         ):
             return True
         return False
@@ -287,7 +288,7 @@ class AirflowDagAdapter:
     #     parser = J_CronParser(J_CronDefinitionBuilder.instanceDefinitionFor(J_CronType.UNIX))
     #     return J_CronMapper.fromUnixToQuartz().map(parser.parse(self._dag.schedule_interval)).asString()
 
-    def _execution_timestamp(self):
+    def execution_timestamp(self):
         previous, following, normalized = (
             self._dag.previous_schedule(self._ts),
             self._dag.following_schedule(self._ts),
@@ -300,7 +301,7 @@ class AirflowDagAdapter:
         return previous
 
     def _execution_time(self):
-        return self._execution_timestamp().strftime("%H:%M:%S")
+        return self.execution_timestamp().strftime("%H:%M:%S")
 
     def validate_task(self, task_id):
         self.validate_task_fields(task_id)
@@ -341,7 +342,7 @@ class AirflowDagAdapter:
         # return resp
 
     def _create_task_context(self, task_id, task):
-        execution_ts = self._execution_timestamp()
+        execution_ts = self.execution_timestamp()
         return {
             "execution_date": execution_ts,
             "ds": execution_ts.strftime("%Y-%m-%d"),
@@ -354,16 +355,16 @@ class AirflowDagAdapter:
 
 class BrickflowWorkflowWithAirflow110(Workflow):
     def __init__(
-        self,
-        name,
-        default_compute: Compute = Compute(compute_id="default"),
-        compute: List[Compute] = None,
-        existing_cluster=None,
-        default_task_settings: Optional[TaskSettings] = None,
-        tags: Dict[str, str] = None,
-        max_concurrent_runs: int = 1,
-        permissions: WorkflowPermissions = None,
-        airflow_110_dag: "DAG" = None,
+            self,
+            name,
+            default_compute: Compute = Compute(compute_id="default"),
+            compute: List[Compute] = None,
+            existing_cluster=None,
+            default_task_settings: Optional[TaskSettings] = None,
+            tags: Dict[str, str] = None,
+            max_concurrent_runs: int = 1,
+            permissions: WorkflowPermissions = None,
+            airflow_110_dag: "DAG" = None,
     ):
         super().__init__(
             name,
@@ -402,10 +403,10 @@ class BrickflowWorkflowWithAirflow110(Workflow):
         )
 
     def bind_airflow_task(
-        self,
-        name: str,
-        compute: Optional[Compute] = None,
-        depends_on: Optional[List[Union[Callable, str]]] = None,
+            self,
+            name: str,
+            compute: Optional[Compute] = None,
+            depends_on: Optional[List[Union[Callable, str]]] = None,
     ):
         self._airflow_110_dag.exists(name)
         trigger_rule = self._airflow_110_dag.get_task(name).trigger_rule
@@ -422,3 +423,12 @@ class BrickflowWorkflowWithAirflow110(Workflow):
             trigger_rule=BrickflowTriggerRule[trigger_rule.upper()],
             custom_execute_callback=self._custom_airflow110_task_execute,
         )
+
+
+if __name__ == "__main__":
+    cron = CronHelper().quartz_to_unix("0 0 10 * * ?")
+    print(cron)
+    # "0 0,8,15 * * *"
+    da = AirflowDagAdapter(DAG("test", schedule_interval=cron))
+    print(datetime.datetime.utcnow())
+    print(da.execution_timestamp())
